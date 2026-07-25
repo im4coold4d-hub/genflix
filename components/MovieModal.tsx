@@ -1,5 +1,8 @@
 "use client";
-import ReactPlayer from "react-player/lazy";
+import React from "react";
+import ReactPlayerBase from "react-player";
+
+const ReactPlayer = ReactPlayerBase as any;
 
 export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie: any; onClose: () => void; onUpdateProgress: (id: string, time: number) => void }) {
   const handleProgress = (state: any) => {
@@ -26,7 +29,7 @@ export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie
             config={{
               youtube: {
                 playerVars: { autoplay: 1 }
-              } as any
+              }
             }}
           />
         </div>
