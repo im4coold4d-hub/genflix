@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #141414;
+    color: #ffffff;
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #141414;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* KILL ALL DEFAULT BROWSER FOCUS RINGS & WHITE OUTLINE BOXES */
+  button, input, select, textarea, div, a {
+    outline: none !important;
+  }
+
+  button:focus, button:focus-visible, input:focus, input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  ::selection {
+    background-color: #8b5cf6;
+    color: #ffffff;
+  }
+}
+
+/* Custom Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
