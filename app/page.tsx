@@ -19,7 +19,6 @@ export default function Dashboard() {
         
         if (snapshot.exists()) {
           const data = snapshot.val();
-          // Convert Realtime Database object into an array with keys as IDs
           const movieList = Object.keys(data).map(key => ({
             id: key,
             ...data[key]
@@ -44,16 +43,15 @@ export default function Dashboard() {
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-[#141414] text-white relative selection:bg-red-600 selection:text-white">
       
       {/* --- NAVIGATION BAR --- */}
-      <nav className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent px-8 py-4 flex items-center justify-between backdrop-blur-sm">
+      <nav className="absolute top-0 left-0 right-0 z-40 px-8 py-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
         <div className="flex items-center space-x-8">
-          <h1 className="text-red-600 font-extrabold text-3xl tracking-tighter cursor-pointer">GENFLIX</h1>
+          <h1 className="text-red-600 font-black text-3xl tracking-tighter">GENFLIX</h1>
           <div className="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
-            <span className="text-white cursor-pointer hover:text-gray-400 transition">Home</span>
-            <span className="cursor-pointer hover:text-gray-400 transition">AI Originals</span>
-            <span className="cursor-pointer hover:text-gray-400 transition">My List</span>
+            <span className="text-white cursor-pointer hover:text-gray-400">Home</span>
+            <span className="cursor-pointer hover:text-gray-400">AI Originals</span>
           </div>
         </div>
 
@@ -63,14 +61,13 @@ export default function Dashboard() {
             placeholder="Search titles..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-black/50 border border-zinc-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-red-600 transition w-48 md:w-64"
+            className="bg-black/60 border border-zinc-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-red-600 w-48 md:w-64"
           />
 
-          {/* User Profile / Logout Dropdown */}
           <div className="relative">
             <button 
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center font-bold text-white shadow-lg hover:bg-red-700 transition cursor-pointer"
+              className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center font-bold text-white shadow hover:bg-red-700 transition cursor-pointer"
             >
               U
             </button>
@@ -94,22 +91,21 @@ export default function Dashboard() {
 
       {/* --- CINEMATIC HERO BANNER --- */}
       {heroMovie && (
-        <div className="relative w-full h-[85vh] bg-black">
+        <div className="relative w-full h-[85vh] bg-black flex items-end">
           <div className="absolute inset-0">
             <img 
               src={heroMovie.thumbnailUrl || heroMovie.videoUrl} 
               alt={heroMovie.title} 
               className="w-full h-full object-cover opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/60" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent w-1/2" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/30 to-black/60" />
           </div>
 
-          <div className="absolute bottom-20 left-8 md:left-16 max-w-2xl space-y-4 z-10">
+          <div className="relative px-8 md:px-16 pb-16 max-w-2xl space-y-4 z-10">
             <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold uppercase rounded tracking-widest">
               Trending AI Release
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-md">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-lg">
               {heroMovie.title}
             </h1>
             <p className="text-gray-300 text-sm md:text-base line-clamp-3 leading-relaxed drop-shadow">
@@ -134,41 +130,39 @@ export default function Dashboard() {
       )}
 
       {/* --- MOVIE ROWS --- */}
-      <div className="px-8 md:px-16 pb-20 -mt-16 relative z-20 space-y-10">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold mb-4 tracking-wide text-gray-200">
-            {searchQuery ? `Search Results (${filteredMovies.length})` : "Trending on GenFlix"}
-          </h2>
-          
-          {filteredMovies.length === 0 ? (
-            <div className="text-gray-500 py-12 text-center bg-zinc-900/40 rounded-xl border border-zinc-800">
-              No titles found. Add some movies to your Realtime Database!
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredMovies.map((movie) => (
-                <div 
-                  key={movie.id}
-                  onClick={() => setSelectedMovie(movie)}
-                  className="group relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer transition transform hover:scale-105 hover:z-30 hover:shadow-2xl aspect-[16/9]"
-                >
-                  <img 
-                    src={movie.thumbnailUrl} 
-                    alt={movie.title}
-                    className="w-full h-full object-cover"
-                    onError={(e: any) => {
-                      e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
-                    <p className="font-bold text-sm text-white truncate">{movie.title}</p>
-                    <span className="text-[10px] text-gray-300 uppercase tracking-wider">{movie.category || "AI Feature"}</span>
-                  </div>
+      <div className="px-8 md:px-16 py-12 space-y-8">
+        <h2 className="text-xl md:text-2xl font-bold tracking-wide text-gray-200">
+          {searchQuery ? `Search Results (${filteredMovies.length})` : "Trending on GenFlix"}
+        </h2>
+        
+        {filteredMovies.length === 0 ? (
+          <div className="text-gray-500 py-12 text-center bg-zinc-900/40 rounded-xl border border-zinc-800">
+            No titles found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {filteredMovies.map((movie) => (
+              <div 
+                key={movie.id}
+                onClick={() => setSelectedMovie(movie)}
+                className="group relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer transition transform hover:scale-105 hover:shadow-2xl aspect-[16/9]"
+              >
+                <img 
+                  src={movie.thumbnailUrl} 
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                  onError={(e: any) => {
+                    e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                  <p className="font-bold text-sm text-white truncate">{movie.title}</p>
+                  <span className="text-[10px] text-gray-300 uppercase tracking-wider">{movie.category || "AI Feature"}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* --- MOVIE PLAYER MODAL --- */}
