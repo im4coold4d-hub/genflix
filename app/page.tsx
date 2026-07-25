@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, get } from "firebase/database";
@@ -89,33 +89,34 @@ export default function Home() {
   const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
 
   // ==========================================
-  // IMMERSIVE FULL-SCREEN PLAYER
+  // IMMERSIVE FULL-SCREEN PLAYER WITH BACK BUTTON
   // ==========================================
   if (activePlayerMovie) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-black w-screen h-screen overflow-hidden flex items-center justify-center">
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent z-50">
+      <div className="fixed inset-0 z-[9999] bg-black w-screen h-screen overflow-hidden flex flex-col items-center justify-center">
+        
+        {/* THE BACK BUTTON OVERLAY */}
+        <div className="absolute top-0 left-0 w-full p-6 z-50 bg-gradient-to-b from-black/90 via-black/40 to-transparent flex items-start">
           <button 
             onClick={() => setActivePlayerMovie(null)}
-            className="flex items-center space-x-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-5 py-2.5 rounded-full font-bold transition cursor-pointer backdrop-blur"
+            className="flex items-center space-x-3 text-white bg-black/60 hover:bg-purple-600/90 hover:text-white px-6 py-3 rounded-full transition-all cursor-pointer text-lg font-bold border border-zinc-700 hover:border-purple-400 shadow-2xl backdrop-blur-md"
           >
-            <span>← Back to Browse</span>
+            <span className="text-3xl leading-none mb-1">←</span>
+            <span>Back to Browse</span>
           </button>
-          <h2 className="text-white font-bold text-lg tracking-wide hidden md:block drop-shadow-md">
-            {activePlayerMovie.title}
-          </h2>
-          <div className="w-24" /> {/* Spacer */}
         </div>
 
+        {/* LOCKED DOWN HTML5 VIDEO (No Downloads) */}
         <video 
           src={activePlayerMovie.videoUrl} 
           controls 
           autoPlay 
           playsInline
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          controlsList="nodownload" 
+          onContextMenu={(e) => e.preventDefault()} 
+          className="absolute inset-0 w-full h-full object-contain bg-black z-40"
           onTimeUpdate={(e) => handleTimeUpdate(activePlayerMovie.id, e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => {
-            // Resume playback if progress exists
             if (watchProgress[activePlayerMovie.id]) {
               e.currentTarget.currentTime = watchProgress[activePlayerMovie.id];
             }
@@ -134,7 +135,7 @@ export default function Home() {
         <div className="flex items-center space-x-10">
           <h1 className="text-purple-600 font-black text-3xl tracking-tighter drop-shadow-lg cursor-pointer">GENFLIX</h1>
           <div className="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
-            <span className="text-white font-semibold cursor-pointer">Home</span>
+            <span className="text-white font-semibold cursor-pointer hover:text-purple-400 transition">Home</span>
             <span className="cursor-pointer hover:text-purple-400 transition">AI Originals</span>
             <span className="cursor-pointer hover:text-purple-400 transition">My List</span>
           </div>
@@ -257,7 +258,7 @@ export default function Home() {
                 
                 {/* Progress Bar UI */}
                 <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-700/80">
-                  <div className="h-full bg-purple-600" style={{ width: "50%" }} /> {/* Placeholder visual for now */}
+                  <div className="h-full bg-purple-600" style={{ width: "50%" }} />
                 </div>
 
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -307,7 +308,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- MORE INFO MODAL (FIXED) --- */}
+      {/* --- MORE INFO MODAL --- */}
       {infoMovie && (
         <div className="fixed inset-0 z-[9999] bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-[#181818] w-full max-w-2xl rounded-2xl overflow-hidden relative border border-zinc-800 shadow-2xl p-8 space-y-6 animate-fade-in">
