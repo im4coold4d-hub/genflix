@@ -35,62 +35,82 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+
+  const handleSwitchUser = () => {
+    // Redirect or prompt for account switching/login
     window.location.href = "/login";
   };
 
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Resolve banner image checking multiple possible property names
-  const heroBannerImg = heroMovie ? (heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
+  // Prioritize dedicated heroBannerUrl, fallback to other fields if missing
+  const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white relative selection:bg-purple-600 selection:text-white pb-24">
+    <div className="min-h-screen bg-[#141414] text-white relative selection:bg-purple-600 selection:text-white pb-24 font-sans">
       
-      {/* --- NAVIGATION BAR --- */}
-      <nav className="absolute top-0 left-0 right-0 z-40 px-8 py-6 flex items-center justify-between bg-gradient-to-b from-black/90 via-black/50 to-transparent">
+      {/* --- NETFLIX-STYLE NAVIGATION BAR --- */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex items-center justify-between bg-gradient-to-b from-black via-black/70 to-transparent backdrop-blur-md">
         <div className="flex items-center space-x-10">
-          <h1 className="text-purple-600 font-black text-3xl tracking-tighter drop-shadow">GENFLIX</h1>
+          <h1 className="text-purple-600 font-black text-3xl tracking-tighter drop-shadow-lg cursor-pointer">GENFLIX</h1>
           <div className="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
-            <span className="text-white font-semibold cursor-pointer">Home</span>
-            <span className="cursor-pointer hover:text-white transition">AI Originals</span>
-            <span className="cursor-pointer hover:text-white transition">My List</span>
+            <span className="text-white font-semibold cursor-pointer hover:text-purple-400 transition">Home</span>
+            <span className="cursor-pointer hover:text-purple-400 transition">AI Originals</span>
+            <span className="cursor-pointer hover:text-purple-400 transition">My List</span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-5">
+        <div className="flex items-center space-x-5 relative">
           <input 
             type="text" 
             placeholder="Search titles..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-black/60 border border-zinc-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner"
+            className="bg-black/60 border border-zinc-700/80 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner transition"
           />
 
+          {/* Styled User Dropdown Menu */}
           <div className="relative">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setUserMenuOpen(!userMenuOpen);
               }}
-              className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white shadow-lg hover:bg-purple-700 transition cursor-pointer"
+              className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white shadow-lg hover:bg-purple-700 transition cursor-pointer border border-purple-400/30"
             >
               U
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-3 w-56 bg-[#181818] border border-zinc-800 rounded-xl shadow-2xl py-2 z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-zinc-800">
+              <div className="absolute right-0 mt-3 w-56 bg-[#181818]/95 backdrop-blur-xl border border-zinc-700/60 rounded-xl shadow-2xl py-2 z-50 overflow-hidden divide-y divide-zinc-800">
+                <div className="px-4 py-3 bg-zinc-900/50">
                   <p className="text-xs text-gray-400">Signed in as</p>
-                  <p className="text-sm font-semibold text-white truncate">Administrator</p>
+                  <p className="text-sm font-bold text-white truncate">Administrator</p>
                 </div>
-                <button 
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-zinc-800/80 transition font-medium cursor-pointer flex items-center space-x-2"
-                >
-                  <span>Sign Out of GenFlix</span>
-                </button>
+                <div className="py-1">
+                  <button 
+                    onClick={handleSwitchUser}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-zinc-800 transition font-medium cursor-pointer flex items-center space-x-2"
+                  >
+                    <span>Switch User</span>
+                  </button>
+                </div>
+                <div className="py-1">
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 transition font-medium cursor-pointer flex items-center space-x-2"
+                  >
+                    <span>Sign Out of GenFlix</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -99,21 +119,22 @@ export default function Dashboard() {
 
       {/* --- CINEMATIC HERO BANNER --- */}
       {heroMovie && (
-        <div className="relative w-full h-[75vh] bg-black flex items-end">
+        <div className="relative w-full h-[75vh] bg-black flex items-end pt-20">
           <div className="absolute inset-0">
             <img 
               src={heroBannerImg} 
               alt={heroMovie.title} 
-              className="w-full h-full object-cover opacity-60"
+              className="w-full h-full object-cover opacity-65"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/40 to-black/70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent w-1/2" />
           </div>
 
           <div className="relative px-8 md:px-16 pb-16 max-w-2xl space-y-4 z-10">
-            <span className="px-3 py-1 bg-purple-600/90 text-white text-xs font-bold uppercase rounded-full tracking-wider border border-purple-400/30">
+            <span className="px-3 py-1 bg-purple-600/90 text-white text-xs font-bold uppercase rounded-full tracking-wider border border-purple-400/30 shadow-md">
               Trending AI Release
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-lg">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-lg text-white">
               {heroMovie.title}
             </h1>
             <p className="text-gray-300 text-sm md:text-base line-clamp-3 leading-relaxed drop-shadow">
@@ -123,14 +144,14 @@ export default function Dashboard() {
               <button 
                 type="button"
                 onClick={() => setSelectedMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-white text-black px-8 py-3 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer z-20"
+                className="flex items-center space-x-2 bg-white text-black px-8 py-3 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer"
               >
                 <span>▶ Play Now</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setSelectedMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer z-20"
+                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer"
               >
                 <span>ℹ More Info</span>
               </button>
