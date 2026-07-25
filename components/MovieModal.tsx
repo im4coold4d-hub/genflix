@@ -26,7 +26,7 @@ export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie
             config={{
               youtube: {
                 playerVars: { autoplay: 1 }
-              }
+              } as any
             }}
           />
         </div>
