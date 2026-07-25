@@ -47,6 +47,14 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  };
+
   if (user) {
     if (isCustomizing) {
       return (
@@ -81,7 +89,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
                   <button
                     key={ic}
                     onClick={() => setCustomIcon(ic)}
-                    className={`h-12 rounded-xl text-2xl flex items-center justify-center border transition-all ${customIcon === ic ? "bg-purple-600/30 border-purple-500 scale-105" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}
+                    className={`h-12 rounded-xl text-2xl flex items-center justify-center border transition-all cursor-pointer ${customIcon === ic ? "bg-purple-600/30 border-purple-500 scale-105" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}
                   >
                     {ic}
                   </button>
@@ -97,7 +105,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
                   <button
                     key={idx}
                     onClick={() => setCustomBg(col)}
-                    className={`w-10 h-10 rounded-xl ${col} border-2 transition-all ${customBg === col ? "border-white scale-110 shadow-lg" : "border-transparent opacity-70 hover:opacity-100"}`}
+                    className={`w-10 h-10 rounded-xl ${col} border-2 transition-all cursor-pointer ${customBg === col ? "border-white scale-110 shadow-lg" : "border-transparent opacity-70 hover:opacity-100"}`}
                   />
                 ))}
               </div>
@@ -107,13 +115,13 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
             <div className="flex space-x-4 pt-4">
               <button 
                 onClick={() => setIsCustomizing(false)}
-                className="w-1/2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-3 rounded-xl transition text-sm outline-none"
+                className="w-1/2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-3 rounded-xl transition text-sm outline-none cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 onClick={() => onSelectProfile({ name: customName || "Profile", avatar: customIcon, bg: customBg })}
-                className="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition text-sm shadow-[0_0_20px_rgba(139,92,246,0.4)] outline-none"
+                className="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition text-sm shadow-[0_0_20px_rgba(139,92,246,0.4)] outline-none cursor-pointer"
               >
                 Save & Watch
               </button>
@@ -129,7 +137,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
 
         <div className="relative z-10 max-w-4xl w-full mx-auto text-center space-y-10 animate-fade-in">
           <div>
-            <h1 className="text-4xl md:text-6xl font-black text-purple-500 tracking-wider drop-shadow-[0_0_25px_rgba(139,92,246,0.4)] mb-3">GENFLIX</h1>
+            <h1 className="text-4xl md:text-6xl font-black text-purple-600 tracking-wider drop-shadow-[0_0_25px_rgba(139,92,246,0.4)] mb-3">GENFLIX</h1>
             <h2 className="text-3xl md:text-4xl font-semibold text-gray-200">Who&apos;s watching?</h2>
             <p className="text-sm text-zinc-400 mt-2">Select a profile or create your own custom avatar</p>
           </div>
@@ -165,8 +173,8 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
 
           <div className="pt-8">
             <button 
-              onClick={() => signOut(auth)} 
-              className="text-sm font-medium text-gray-400 hover:text-white border border-zinc-700 hover:border-purple-500 px-8 py-3.5 rounded-xl transition-all bg-black/50 hover:bg-zinc-900 outline-none"
+              onClick={handleSignOut} 
+              className="text-sm font-medium text-gray-400 hover:text-white border border-zinc-700 hover:border-purple-500 px-8 py-3.5 rounded-xl transition-all bg-black/50 hover:bg-zinc-900 outline-none cursor-pointer"
             >
               Sign Out of Account
             </button>
@@ -182,7 +190,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
 
       <div className="relative z-10 bg-black/85 p-10 md:p-14 rounded-2xl border border-zinc-800/80 w-full max-w-[460px] shadow-[0_25px_60px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black text-purple-500 tracking-wider mb-2 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">GENFLIX</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-purple-600 tracking-wider mb-2 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">GENFLIX</h1>
           <h2 className="text-xl font-bold text-gray-200">{isSignUp ? "Create your account" : "Welcome back"}</h2>
         </div>
 
@@ -197,7 +205,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
               required
-              className="w-full bg-zinc-900/90 border border-zinc-700 rounded-xl p-4 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition text-sm font-medium"
+              className="w-full bg-zinc-900/90 border border-zinc-700 rounded-xl p-4 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600/30 transition text-sm font-medium"
             />
           </div>
           <div>
@@ -208,7 +216,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full bg-zinc-900/90 border border-zinc-700 rounded-xl p-4 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition text-sm font-medium"
+              className="w-full bg-zinc-900/90 border border-zinc-700 rounded-xl p-4 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600/30 transition text-sm font-medium"
             />
           </div>
           <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_25px_rgba(139,92,246,0.4)] text-sm tracking-wide transform active:scale-[0.98] outline-none cursor-pointer">
@@ -218,7 +226,7 @@ export default function AuthScreen({ user, onSelectProfile }: { user: any; onSel
 
         <div className="text-sm text-gray-400 text-center pt-6">
           {isSignUp ? "Already have an account?" : "New to GenFlix?"}{" "}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="text-white hover:text-purple-400 transition font-bold ml-1 outline-none">
+          <button onClick={() => setIsSignUp(!isSignUp)} className="text-white hover:text-purple-400 transition font-bold ml-1 outline-none cursor-pointer">
             {isSignUp ? "Sign in now." : "Sign up now."}
           </button>
         </div>
