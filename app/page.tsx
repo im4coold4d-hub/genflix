@@ -4,7 +4,6 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, get } from "firebase/database";
 import AuthScreen from "@/components/AuthScreen";
-import MovieModal from "@/components/MovieModal";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -12,24 +11,20 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   
   const [movies, setMovies] = useState<any[]>([]);
-  const [selectedMovie, setSelectedMovie] = useState<any>(null); // For playing video modal
-  const [infoMovie, setInfoMovie] = useState<any>(null);         // For "More Info" modal
+  const [activePlayerMovie, setActivePlayerMovie] = useState<any>(null); // Full-screen immersive player
+  const [infoMovie, setInfoMovie] = useState<any>(null);                 // More info modal
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Listen to Firebase Auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (!currentUser) {
-        setProfile(null);
-      }
+      if (!currentUser) setProfile(null);
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Fetch movies from Realtime Database
   useEffect(() => {
     if (!user || !profile) return;
     const fetchMovies = async () => {
@@ -58,12 +53,7 @@ export default function Home() {
   }
 
   if (!user || !profile) {
-    return (
-      <AuthScreen 
-        user={user} 
-        onSelectProfile={(selectedProf) => setProfile(selectedProf)} 
-      />
-    );
+    return <AuthScreen user={user} onSelectProfile={(selectedProf) => setProfile(selectedProf)} />;
   }
 
   const handleLogout = async () => {
@@ -75,24 +65,50 @@ export default function Home() {
     }
   };
 
-  const handleSwitchUser = () => {
-    setProfile(null);
-    setUserMenuOpen(false);
-  };
-
   const heroMovie = movies.length > 0 ? movies[0] : null;
-  const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
+
+  // ==========================================
+  // TRUE NETFLIX FULL-SCREEN PLAYER OVERLAY
+  // ==========================================
+  if (activePlayerMovie) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center select-none">
+        {/* Top Control Bar */}
+        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent z-20">
+          <button 
+            onClick={() => setActivePlayerMovie(null)}
+            className="flex items-center space-x-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-5 py-2.5 rounded-full font-bold transition cursor-pointer backdrop-blur"
+          >
+            <span>← Back to Browse</span>
+          </button>
+          <h2 className="text-white font-bold text-lg tracking-wide hidden md:block">{activePlayerMovie.title}</h2>
+          <div />
+        </div>
+
+        {/* HTML5 Fullscreen Video Element */}
+        <video 
+          src={activePlayerMovie.videoUrl} 
+          controls 
+          autoPlay 
+          playsInline
+          className="w-full h-full object-contain"
+          onError={(e) => console.error("Video playback failed:", e)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#141414] text-white relative selection:bg-purple-600 selection:text-white pb-24 font-sans">
       
-      {/* --- NETFLIX-STYLE NAVIGATION BAR --- */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex items-center justify-between bg-gradient-to-b from-black via-black/70 to-transparent backdrop-blur-md">
+      {/* --- NETFLIX NAVIGATION BAR --- */}
+      <nav className="fixed top-0 left-0 right-0 z-40 px-8 py-4 flex items-center justify-between bg-gradient-to-b from-black via-black/80 to-transparent backdrop-blur-md">
         <div className="flex items-center space-x-10">
           <h1 className="text-purple-600 font-black text-3xl tracking-tighter drop-shadow-lg cursor-pointer">GENFLIX</h1>
           <div className="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
-            <span className="text-white font-semibold cursor-pointer hover:text-purple-400 transition">Home</span>
+            <span className="text-white font-semibold cursor-pointer">Home</span>
             <span className="cursor-pointer hover:text-purple-400 transition">AI Originals</span>
             <span className="cursor-pointer hover:text-purple-400 transition">My List</span>
           </div>
@@ -104,7 +120,7 @@ export default function Home() {
             placeholder="Search titles..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-black/60 border border-zinc-700/80 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner transition"
+            className="bg-black/70 border border-zinc-700/80 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner transition"
           />
 
           <div className="relative">
@@ -131,18 +147,18 @@ export default function Home() {
                 </div>
                 <div className="py-1">
                   <button 
-                    onClick={handleSwitchUser}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-zinc-800 transition font-medium cursor-pointer flex items-center space-x-2"
+                    onClick={() => { setProfile(null); setUserMenuOpen(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-zinc-800 transition font-medium cursor-pointer"
                   >
-                    <span>Switch User</span>
+                    Switch User
                   </button>
                 </div>
                 <div className="py-1">
                   <button 
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 transition font-medium cursor-pointer flex items-center space-x-2"
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 transition font-medium cursor-pointer"
                   >
-                    <span>Sign Out of GenFlix</span>
+                    Sign Out of GenFlix
                   </button>
                 </div>
               </div>
@@ -151,20 +167,20 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* --- CINEMATIC HERO BANNER --- */}
-      {heroMovie && (
-        <div className="relative w-full h-[75vh] bg-black flex items-end pt-20">
+      {/* --- CINEMATIC FULL HERO BANNER --- */}
+      {heroMovie && !searchQuery && (
+        <div className="relative w-full h-[85vh] bg-black flex items-end">
           <div className="absolute inset-0">
             <img 
               src={heroBannerImg} 
               alt={heroMovie.title} 
-              className="w-full h-full object-cover opacity-65"
+              className="w-full h-full object-cover opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/40 to-black/70" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent w-1/2" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/40 to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent w-2/3" />
           </div>
 
-          <div className="relative px-8 md:px-16 pb-16 max-w-2xl space-y-4 z-10">
+          <div className="relative px-8 md:px-16 pb-20 max-w-2xl space-y-4 z-10">
             <span className="px-3 py-1 bg-purple-600/90 text-white text-xs font-bold uppercase rounded-full tracking-wider border border-purple-400/30 shadow-md">
               Trending AI Release
             </span>
@@ -177,15 +193,15 @@ export default function Home() {
             <div className="flex space-x-4 pt-2">
               <button 
                 type="button"
-                onClick={() => setSelectedMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-white text-black px-8 py-3 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer"
+                onClick={() => setActivePlayerMovie(heroMovie)}
+                className="flex items-center space-x-2 bg-white text-black px-8 py-3.5 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer"
               >
                 <span>▶ Play Now</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setInfoMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer"
+                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3.5 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer"
               >
                 <span>ℹ More Info</span>
               </button>
@@ -194,22 +210,22 @@ export default function Home() {
         </div>
       )}
 
-      {/* --- MOVIE ROWS --- */}
-      <div className="px-8 md:px-16 mt-8 space-y-6">
+      {/* --- MOVIE ROWS / SEARCH RESULTS --- */}
+      <div className={`px-8 md:px-16 ${heroMovie && !searchQuery ? "mt-8" : "mt-32"} space-y-6`}>
         <h2 className="text-xl md:text-2xl font-bold tracking-wide text-gray-200">
           {searchQuery ? `Search Results (${filteredMovies.length})` : "Trending on GenFlix"}
         </h2>
         
         {filteredMovies.length === 0 ? (
           <div className="text-gray-500 py-16 text-center bg-zinc-900/40 rounded-xl border border-zinc-800">
-            No titles found.
+            No titles found matching &quot;{searchQuery}&quot;.
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {filteredMovies.map((movie) => (
               <div 
                 key={movie.id}
-                onClick={() => setSelectedMovie(movie)}
+                onClick={() => setActivePlayerMovie(movie)}
                 className="group relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-purple-500/50 aspect-[16/9]"
               >
                 <img 
@@ -230,16 +246,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- VIDEO PLAYER MODAL (Triggers on Play Now / Grid Click) --- */}
-      {selectedMovie && (
-        <MovieModal 
-          movie={selectedMovie} 
-          onClose={() => setSelectedMovie(null)} 
-          onUpdateProgress={(id, time) => console.log("Progress:", id, time)} 
-        />
-      )}
-
-      {/* --- MORE INFO MODAL (Triggers exclusively on More Info) --- */}
+      {/* --- MORE INFO MODAL --- */}
       {infoMovie && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-[#181818] w-full max-w-2xl rounded-2xl overflow-hidden relative border border-zinc-800 shadow-2xl p-8 space-y-6">
@@ -260,9 +267,9 @@ export default function Home() {
               onClick={() => {
                 const mov = infoMovie;
                 setInfoMovie(null);
-                setSelectedMovie(mov);
+                setActivePlayerMovie(mov);
               }}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition cursor-pointer"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition cursor-pointer"
             >
               ▶ Play Now
             </button>
