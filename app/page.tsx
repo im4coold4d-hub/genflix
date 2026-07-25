@@ -1,22 +1,40 @@
 "use client";
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, get } from "firebase/database";
-import { signOut } from "firebase/auth";
+import AuthScreen from "@/components/AuthScreen";
 import MovieModal from "@/components/MovieModal";
 
-export default function Dashboard() {
+export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
   const [movies, setMovies] = useState<any[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Listen to Firebase Auth state
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setProfile(null); // Reset profile on sign out
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch movies from Realtime Database
+  useEffect(() => {
+    if (!user || !profile) return;
     const fetchMovies = async () => {
       try {
         const moviesRef = ref(db, "movies");
         const snapshot = await get(moviesRef);
-        
         if (snapshot.exists()) {
           const data = snapshot.val();
           const movieList = Object.keys(data).map(key => ({
@@ -32,26 +50,40 @@ export default function Dashboard() {
       }
     };
     fetchMovies();
-  }, []);
+  }, [user, profile]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#141414] flex items-center justify-center text-purple-600 font-bold">Loading GenFlix...</div>;
+  }
+
+  // If not logged in, or logged in but haven't chosen a profile yet, show AuthScreen / Profile selector
+  if (!user || !profile) {
+    return (
+      <AuthScreen 
+        user={user} 
+        onSelectProfile={(selectedProf) => setProfile(selectedProf)} 
+      />
+    );
+  }
 
   const handleLogout = async () => {
     try {
+      setProfile(null);
       await signOut(auth);
-      window.location.href = "/login";
     } catch (err) {
       console.error("Logout error:", err);
     }
   };
 
   const handleSwitchUser = () => {
-    // Redirect or prompt for account switching/login
-    window.location.href = "/login";
+    setProfile(null); // Clears profile selection to bring back the "Who's watching?" profile picker screen
+    setUserMenuOpen(false);
   };
 
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Prioritize dedicated heroBannerUrl, fallback to other fields if missing
+  // Prioritize dedicated hero banner field, fallback gracefully
   const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
 
   return (
@@ -77,23 +109,28 @@ export default function Dashboard() {
             className="bg-black/60 border border-zinc-700/80 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner transition"
           />
 
-          {/* Styled User Dropdown Menu */}
+          {/* Styled User Dropdown Menu with Switch User & Sign Out */}
           <div className="relative">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setUserMenuOpen(!userMenuOpen);
               }}
-              className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white shadow-lg hover:bg-purple-700 transition cursor-pointer border border-purple-400/30"
+              className={`w-10 h-10 rounded-xl ${profile.bg} flex items-center justify-center font-bold text-white shadow-lg transition cursor-pointer border border-purple-400/40 hover:scale-105`}
             >
-              U
+              <span>{profile.avatar}</span>
             </button>
 
             {userMenuOpen && (
               <div className="absolute right-0 mt-3 w-56 bg-[#181818]/95 backdrop-blur-xl border border-zinc-700/60 rounded-xl shadow-2xl py-2 z-50 overflow-hidden divide-y divide-zinc-800">
-                <div className="px-4 py-3 bg-zinc-900/50">
-                  <p className="text-xs text-gray-400">Signed in as</p>
-                  <p className="text-sm font-bold text-white truncate">Administrator</p>
+                <div className="px-4 py-3 bg-zinc-900/50 flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-lg ${profile.bg} flex items-center justify-center text-sm`}>
+                    {profile.avatar}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs text-gray-400">Watching as</p>
+                    <p className="text-sm font-bold text-white truncate">{profile.name}</p>
+                  </div>
                 </div>
                 <div className="py-1">
                   <button 
