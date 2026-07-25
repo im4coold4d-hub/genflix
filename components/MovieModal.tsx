@@ -1,5 +1,5 @@
 "use client";
-import ReactPlayer from "react-player";
+import ReactPlayer from "react-player/lazy";
 
 export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie: any; onClose: () => void; onUpdateProgress: (id: string, time: number) => void }) {
   const handleProgress = (state: any) => {
