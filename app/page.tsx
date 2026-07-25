@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, get } from "firebase/database";
@@ -11,10 +11,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   
   const [movies, setMovies] = useState<any[]>([]);
-  const [activePlayerMovie, setActivePlayerMovie] = useState<any>(null); // Full-screen immersive player
-  const [infoMovie, setInfoMovie] = useState<any>(null);                 // More info modal
+  const [activePlayerMovie, setActivePlayerMovie] = useState<any>(null);
+  const [infoMovie, setInfoMovie] = useState<any>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Continue Watching State
+  const [watchProgress, setWatchProgress] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -46,6 +49,12 @@ export default function Home() {
       }
     };
     fetchMovies();
+    
+    // Load local progress
+    const savedProgress = localStorage.getItem("genflix_progress");
+    if (savedProgress) {
+      setWatchProgress(JSON.parse(savedProgress));
+    }
   }, [user, profile]);
 
   if (loading) {
@@ -65,35 +74,52 @@ export default function Home() {
     }
   };
 
+  const handleTimeUpdate = (movieId: string, time: number) => {
+    if (time < 2) return; // Ignore accidental clicks under 2 seconds
+    setWatchProgress(prev => {
+      const newProgress = { ...prev, [movieId]: time };
+      localStorage.setItem("genflix_progress", JSON.stringify(newProgress));
+      return newProgress;
+    });
+  };
+
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase().trim()));
+  const continueWatchingMovies = movies.filter(m => watchProgress[m.id] && watchProgress[m.id] > 2);
   const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
 
   // ==========================================
-  // TRUE NETFLIX FULL-SCREEN PLAYER OVERLAY
+  // IMMERSIVE FULL-SCREEN PLAYER
   // ==========================================
   if (activePlayerMovie) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center select-none">
-        {/* Top Control Bar */}
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent z-20">
+      <div className="fixed inset-0 z-[9999] bg-black w-screen h-screen overflow-hidden flex items-center justify-center">
+        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent z-50">
           <button 
             onClick={() => setActivePlayerMovie(null)}
             className="flex items-center space-x-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-5 py-2.5 rounded-full font-bold transition cursor-pointer backdrop-blur"
           >
             <span>← Back to Browse</span>
           </button>
-          <h2 className="text-white font-bold text-lg tracking-wide hidden md:block">{activePlayerMovie.title}</h2>
-          <div />
+          <h2 className="text-white font-bold text-lg tracking-wide hidden md:block drop-shadow-md">
+            {activePlayerMovie.title}
+          </h2>
+          <div className="w-24" /> {/* Spacer */}
         </div>
 
-        {/* HTML5 Fullscreen Video Element */}
         <video 
           src={activePlayerMovie.videoUrl} 
           controls 
           autoPlay 
           playsInline
-          className="w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-contain bg-black"
+          onTimeUpdate={(e) => handleTimeUpdate(activePlayerMovie.id, e.currentTarget.currentTime)}
+          onLoadedMetadata={(e) => {
+            // Resume playback if progress exists
+            if (watchProgress[activePlayerMovie.id]) {
+              e.currentTarget.currentTime = watchProgress[activePlayerMovie.id];
+            }
+          }}
           onError={(e) => console.error("Video playback failed:", e)}
         />
       </div>
@@ -210,8 +236,43 @@ export default function Home() {
         </div>
       )}
 
+      {/* --- CONTINUE WATCHING ROW --- */}
+      {!searchQuery && continueWatchingMovies.length > 0 && (
+        <div className="px-8 md:px-16 mt-8 space-y-4">
+          <h2 className="text-xl md:text-2xl font-bold tracking-wide text-gray-200">
+            Continue Watching for {profile.name}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+            {continueWatchingMovies.map((movie) => (
+              <div 
+                key={`cw-${movie.id}`}
+                onClick={() => setActivePlayerMovie(movie)}
+                className="group relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-purple-500/50 aspect-[16/9]"
+              >
+                <img 
+                  src={movie.thumbnailUrl} 
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Progress Bar UI */}
+                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-700/80">
+                  <div className="h-full bg-purple-600" style={{ width: "50%" }} /> {/* Placeholder visual for now */}
+                </div>
+
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-bold border border-white/40">
+                    ▶
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* --- MOVIE ROWS / SEARCH RESULTS --- */}
-      <div className={`px-8 md:px-16 ${heroMovie && !searchQuery ? "mt-8" : "mt-32"} space-y-6`}>
+      <div className={`px-8 md:px-16 ${heroMovie && !searchQuery ? "mt-12" : "mt-32"} space-y-6`}>
         <h2 className="text-xl md:text-2xl font-bold tracking-wide text-gray-200">
           {searchQuery ? `Search Results (${filteredMovies.length})` : "Trending on GenFlix"}
         </h2>
@@ -225,7 +286,7 @@ export default function Home() {
             {filteredMovies.map((movie) => (
               <div 
                 key={movie.id}
-                onClick={() => setActivePlayerMovie(movie)}
+                onClick={() => setInfoMovie(movie)}
                 className="group relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-purple-500/50 aspect-[16/9]"
               >
                 <img 
@@ -246,10 +307,10 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- MORE INFO MODAL --- */}
+      {/* --- MORE INFO MODAL (FIXED) --- */}
       {infoMovie && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-[#181818] w-full max-w-2xl rounded-2xl overflow-hidden relative border border-zinc-800 shadow-2xl p-8 space-y-6">
+        <div className="fixed inset-0 z-[9999] bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-[#181818] w-full max-w-2xl rounded-2xl overflow-hidden relative border border-zinc-800 shadow-2xl p-8 space-y-6 animate-fade-in">
             <button 
               onClick={() => setInfoMovie(null)} 
               className="absolute top-4 right-4 text-white bg-black/70 rounded-full w-10 h-10 flex items-center justify-center font-bold hover:bg-purple-600 transition cursor-pointer"
@@ -269,9 +330,10 @@ export default function Home() {
                 setInfoMovie(null);
                 setActivePlayerMovie(mov);
               }}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition cursor-pointer"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition cursor-pointer flex justify-center items-center space-x-2"
             >
-              ▶ Play Now
+              <span>▶</span>
+              <span>Play Now</span>
             </button>
           </div>
         </div>
