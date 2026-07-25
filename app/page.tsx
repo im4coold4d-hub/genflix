@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { db, auth } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 import { signOut } from "firebase/auth";
 import MovieModal from "@/components/MovieModal";
 
@@ -14,9 +14,20 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "movies"));
-        const movieList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setMovies(movieList);
+        const moviesRef = ref(db, "movies");
+        const snapshot = await get(moviesRef);
+        
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          // Convert Realtime Database object into an array with keys as IDs
+          const movieList = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          setMovies(movieList);
+        } else {
+          setMovies([]);
+        }
       } catch (err) {
         console.error("Error fetching movies:", err);
       }
@@ -29,7 +40,6 @@ export default function Dashboard() {
     window.location.href = "/login";
   };
 
-  // Featured movie for the hero banner (defaults to the first movie)
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -91,7 +101,6 @@ export default function Dashboard() {
               alt={heroMovie.title} 
               className="w-full h-full object-cover opacity-60"
             />
-            {/* Gradients for smooth fade into background */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/60" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent w-1/2" />
           </div>
@@ -133,7 +142,7 @@ export default function Dashboard() {
           
           {filteredMovies.length === 0 ? (
             <div className="text-gray-500 py-12 text-center bg-zinc-900/40 rounded-xl border border-zinc-800">
-              No titles found. Add some movies to your Firebase database!
+              No titles found. Add some movies to your Realtime Database!
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -148,7 +157,6 @@ export default function Dashboard() {
                     alt={movie.title}
                     className="w-full h-full object-cover"
                     onError={(e: any) => {
-                      // Fallback visual if image fails to load
                       e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop";
                     }}
                   />
