@@ -42,6 +42,9 @@ export default function Dashboard() {
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
+  // Resolve banner image checking multiple possible property names
+  const heroBannerImg = heroMovie ? (heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
+
   return (
     <div className="min-h-screen bg-[#141414] text-white relative selection:bg-purple-600 selection:text-white pb-24">
       
@@ -65,7 +68,6 @@ export default function Dashboard() {
             className="bg-black/60 border border-zinc-700 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner"
           />
 
-          {/* User Profile & Menu */}
           <div className="relative">
             <button 
               onClick={(e) => {
@@ -100,7 +102,7 @@ export default function Dashboard() {
         <div className="relative w-full h-[75vh] bg-black flex items-end">
           <div className="absolute inset-0">
             <img 
-              src={heroMovie.thumbnailUrl || heroMovie.videoUrl} 
+              src={heroBannerImg} 
               alt={heroMovie.title} 
               className="w-full h-full object-cover opacity-60"
             />
@@ -119,14 +121,16 @@ export default function Dashboard() {
             </p>
             <div className="flex space-x-4 pt-2">
               <button 
+                type="button"
                 onClick={() => setSelectedMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-white text-black px-8 py-3 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer"
+                className="flex items-center space-x-2 bg-white text-black px-8 py-3 rounded-md font-bold text-base hover:bg-gray-200 transition shadow-xl cursor-pointer z-20"
               >
                 <span>▶ Play Now</span>
               </button>
               <button 
+                type="button"
                 onClick={() => setSelectedMovie(heroMovie)}
-                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer"
+                className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer z-20"
               >
                 <span>ℹ More Info</span>
               </button>
