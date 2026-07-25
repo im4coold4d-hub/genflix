@@ -1,31 +1,33 @@
 "use client";
-import { useRef } from "react";
+import ReactPlayer from "react-player";
 
 export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie: any; onClose: () => void; onUpdateProgress: (id: string, time: number) => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      onUpdateProgress(movie.id, videoRef.current.currentTime);
-    }
+  const handleProgress = (state: { playedSeconds: number }) => {
+    onUpdateProgress(movie.id, state.playedSeconds);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-[#181818] w-full max-w-4xl rounded-xl overflow-hidden relative max-h-[90vh] overflow-y-auto border border-zinc-800 shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 text-white bg-black/60 rounded-full w-9 h-9 flex items-center justify-center font-bold hover:bg-purple-600 transition">
+        <button onClick={onClose} className="absolute top-4 right-4 z-20 text-white bg-black/60 rounded-full w-9 h-9 flex items-center justify-center font-bold hover:bg-purple-600 transition cursor-pointer">
           ✕
         </button>
         
-        {/* Custom Video Player with Progress tracking */}
+        {/* Universal Video Player (Supports MP4 & YouTube) with Progress tracking */}
         <div className="relative aspect-video w-full bg-black">
-          <video 
-            ref={videoRef}
-            src={movie.videoUrl} 
-            controls 
-            autoPlay 
-            onTimeUpdate={handleTimeUpdate}
-            className="w-full h-full" 
+          <ReactPlayer
+            url={movie.videoUrl}
+            width="100%"
+            height="100%"
+            controls={true}
+            playing={true}
+            onProgress={handleProgress}
+            progressInterval={1000}
+            config={{
+              youtube: {
+                playerVars: { autoplay: 1 }
+              }
+            }}
           />
         </div>
 
