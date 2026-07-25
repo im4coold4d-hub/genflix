@@ -1,20 +1,11 @@
 "use client";
 import React from "react";
-import ReactPlayerBase from "react-player";
-
-const ReactPlayer = ReactPlayerBase as any;
 
 export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie: any; onClose: () => void; onUpdateProgress: (id: string, time: number) => void }) {
-  const handleProgress = (state: any) => {
-    if (onUpdateProgress) {
-      onUpdateProgress(movie.id, state.playedSeconds);
-    }
-  };
-
-  const isDirectVideo = movie.videoUrl?.endsWith(".mp4") || movie.videoUrl?.endsWith(".webm") || movie.videoUrl?.endsWith(".mov");
+  if (!movie) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-[#181818] w-full max-w-4xl rounded-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto border border-zinc-800 shadow-2xl">
         <button 
           onClick={onClose} 
@@ -23,31 +14,19 @@ export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie
           ✕
         </button>
         
-        {/* Dynamic Player: Uses native HTML5 for direct .mp4 files, ReactPlayer for YouTube/Streams */}
+        {/* Direct HTML5 Video Player */}
         <div className="relative aspect-video w-full bg-black flex items-center justify-center">
-          {isDirectVideo ? (
-            <video 
-              src={movie.videoUrl} 
-              controls 
-              autoPlay 
-              className="w-full h-full object-contain"
-              onTimeUpdate={(e: any) => {
-                if (onUpdateProgress) {
-                  onUpdateProgress(movie.id, e.target.currentTime);
-                }
-              }}
-            />
-          ) : (
-            <ReactPlayer
-              url={movie.videoUrl}
-              width="100%"
-              height="100%"
-              controls={true}
-              playing={true}
-              onProgress={handleProgress}
-              progressInterval={1000}
-            />
-          )}
+          <video 
+            src={movie.videoUrl} 
+            controls 
+            autoPlay 
+            className="w-full h-full object-contain"
+            onTimeUpdate={(e: any) => {
+              if (onUpdateProgress) {
+                onUpdateProgress(movie.id, e.target.currentTime);
+              }
+            }}
+          />
         </div>
 
         <div className="p-8 space-y-6">
