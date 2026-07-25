@@ -12,7 +12,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   
   const [movies, setMovies] = useState<any[]>([]);
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [selectedMovie, setSelectedMovie] = useState<any>(null); // For playing video modal
+  const [infoMovie, setInfoMovie] = useState<any>(null);         // For "More Info" modal
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -21,7 +22,7 @@ export default function Home() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        setProfile(null); // Reset profile on sign out
+        setProfile(null);
       }
       setLoading(false);
     });
@@ -56,7 +57,6 @@ export default function Home() {
     return <div className="min-h-screen bg-[#141414] flex items-center justify-center text-purple-600 font-bold">Loading GenFlix...</div>;
   }
 
-  // If not logged in, or logged in but haven't chosen a profile yet, show AuthScreen / Profile selector
   if (!user || !profile) {
     return (
       <AuthScreen 
@@ -76,14 +76,12 @@ export default function Home() {
   };
 
   const handleSwitchUser = () => {
-    setProfile(null); // Clears profile selection to bring back the "Who's watching?" profile picker screen
+    setProfile(null);
     setUserMenuOpen(false);
   };
 
   const heroMovie = movies.length > 0 ? movies[0] : null;
   const filteredMovies = movies.filter(m => m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  // Prioritize dedicated hero banner field, fallback gracefully
   const heroBannerImg = heroMovie ? (heroMovie.heroBannerUrl || heroMovie.bannerUrl || heroMovie.heroUrl || heroMovie.thumbnailUrl || heroMovie.videoUrl) : "";
 
   return (
@@ -109,7 +107,6 @@ export default function Home() {
             className="bg-black/60 border border-zinc-700/80 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-600 w-48 md:w-64 shadow-inner transition"
           />
 
-          {/* Styled User Dropdown Menu with Switch User & Sign Out */}
           <div className="relative">
             <button 
               onClick={(e) => {
@@ -187,7 +184,7 @@ export default function Home() {
               </button>
               <button 
                 type="button"
-                onClick={() => setSelectedMovie(heroMovie)}
+                onClick={() => setInfoMovie(heroMovie)}
                 className="flex items-center space-x-2 bg-zinc-600/80 backdrop-blur text-white px-6 py-3 rounded-md font-bold text-base hover:bg-zinc-600 transition shadow-xl cursor-pointer"
               >
                 <span>ℹ More Info</span>
@@ -233,13 +230,44 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- MOVIE PLAYER MODAL --- */}
+      {/* --- VIDEO PLAYER MODAL (Triggers on Play Now / Grid Click) --- */}
       {selectedMovie && (
         <MovieModal 
           movie={selectedMovie} 
           onClose={() => setSelectedMovie(null)} 
           onUpdateProgress={(id, time) => console.log("Progress:", id, time)} 
         />
+      )}
+
+      {/* --- MORE INFO MODAL (Triggers exclusively on More Info) --- */}
+      {infoMovie && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-[#181818] w-full max-w-2xl rounded-2xl overflow-hidden relative border border-zinc-800 shadow-2xl p-8 space-y-6">
+            <button 
+              onClick={() => setInfoMovie(null)} 
+              className="absolute top-4 right-4 text-white bg-black/70 rounded-full w-10 h-10 flex items-center justify-center font-bold hover:bg-purple-600 transition cursor-pointer"
+            >
+              ✕
+            </button>
+            <div>
+              <span className="text-xs font-bold uppercase px-3 py-1 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-full">
+                {infoMovie.category || "AI Feature"}
+              </span>
+              <h2 className="text-3xl font-extrabold mt-3 text-white">{infoMovie.title}</h2>
+            </div>
+            <p className="text-gray-300 text-sm leading-relaxed">{infoMovie.synopsis}</p>
+            <button 
+              onClick={() => {
+                const mov = infoMovie;
+                setInfoMovie(null);
+                setSelectedMovie(mov);
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition cursor-pointer"
+            >
+              ▶ Play Now
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
