@@ -2,7 +2,7 @@
 import ReactPlayer from "react-player";
 
 export default function MovieModal({ movie, onClose, onUpdateProgress }: { movie: any; onClose: () => void; onUpdateProgress: (id: string, time: number) => void }) {
-  const handleProgress = (state: { playedSeconds: number }) => {
+  const handleProgress = (state: any) => {
     onUpdateProgress(movie.id, state.playedSeconds);
   };
 
